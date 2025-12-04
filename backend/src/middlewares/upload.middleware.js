@@ -2,10 +2,18 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
+// Use /tmp for serverless environments (Vercel), ./uploads for local
+const uploadDir = process.env.NODE_ENV === "production" 
+  ? "/tmp/uploads" 
+  : (process.env.UPLOAD_PATH || "./uploads");
+
 // Ensure uploads directory exists
-const uploadDir = process.env.UPLOAD_PATH || "./uploads";
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  } catch (error) {
+    console.warn(`Could not create upload directory: ${error.message}`);
+  }
 }
 
 // Configure storage

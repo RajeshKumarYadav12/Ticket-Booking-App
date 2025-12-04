@@ -2,25 +2,28 @@ const sgMail = require("@sendgrid/mail");
 
 class MailService {
   constructor() {
-    if (process.env.SENDGRID_API_KEY) {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY.startsWith("SG.")) {
+      try {
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      } catch (error) {
+        console.warn("SendGrid initialization error:", error.message);
+      }
     }
   }
 
   async sendEmail(to, subject, html) {
-    // Skip email in development if no API key
-    if (!process.env.SENDGRID_API_KEY) {
-      console.log("Email notification (not sent - no API key):");
+    // Skip email if no API key or invalid API key
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_API_KEY.startsWith("SG.")) {
+      console.log("Email notification (not sent - no valid API key):");
       console.log(`To: ${to}`);
       console.log(`Subject: ${subject}`);
-      console.log(`Body: ${html}`);
       return;
     }
 
     try {
       const msg = {
         to,
-        from: process.env.EMAIL_FROM,
+        from: process.env.EMAIL_FROM || "noreply@ticketing.com",
         subject,
         html,
       };
@@ -28,7 +31,7 @@ class MailService {
       await sgMail.send(msg);
       console.log(`Email sent to ${to}`);
     } catch (error) {
-      console.error("Error sending email:", error);
+      console.error("Error sending email:", error.message);
       // Don't throw error to prevent blocking the main operation
     }
   }
